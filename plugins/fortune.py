@@ -1,11 +1,10 @@
-import xmpp
 import random 
 
-def init():
-    return 0
+class Fortune:
+    public = ['fortune', 'testm']
 
-def run(bot, msg, dest):
-    fortunes = ['The gene pool could use a little chlorine.',
+    def fortune(self, sendfunc, msg):
+        fortunes = ['The gene pool could use a little chlorine.',
                 'Make it idiot proof and someone will make a better idiot.', 
                 'He who laughs last thinks slowest.',
                 'A flashlight is a case for holding dead batteries.', 
@@ -35,6 +34,9 @@ def run(bot, msg, dest):
                 'I am sorry to say that there is too much point to the wisecrack that life is extinct on other planets because their scientists were more advanced than ours.'
                 ]
 
-    quote = fortunes[random.randint(1,len(fortunes))]
-
-    bot.send(xmpp.Message(dest, quote, 'groupchat'))
+        quote = fortunes[random.randint(1,len(fortunes))]
+        
+        sendfunc(quote, 'groupchat')
+        
+    def testm(senlf, sendfunc, msg):
+        sendfunc('It is test module.', 'groupchat')
