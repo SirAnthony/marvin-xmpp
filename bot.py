@@ -102,7 +102,10 @@ class Bot:
         text = unicode(msg.getBody()).encode('utf8')
         user = unicode(msg.getFrom()).encode('utf8')
         if not text: return
-        command = text.split(' ')
+        try: command, stext = text.split(' ', 1)
+        except ValueError:
+            command = text
+            stext = '' 
         if not msg.timestamp and user != self.conference+'/'+self.nick:
             if 'php' in text:
                 self.sayChat(u'php-какашка') #coding-utf8 badbad
@@ -114,12 +117,13 @@ class Bot:
             if '!functions' in text:
                 self.sayChat(self.functions.keys())
                 return
-            if command[0] in self.functions.keys():
-                self.execute(command[0], text)
+            if command in self.functions.keys():
+                self.execute(command, stext)
                 return
             if '!reload' in text:
                 self.sayChat('Reloading modules...')
                 self.loadPlugins()
+            #FIXME: eval not begin string. 
             if '!eval' in text and user == self.conference + '/' + self.admin:
                 estr = str(text.split(' ', 1)[1])
                 try: exec(estr)
