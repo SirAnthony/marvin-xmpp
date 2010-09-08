@@ -90,15 +90,16 @@ aniget <number> <string>:
     
     def encd(self, string):
         "Convert codes into characters"
-        string = re.sub(r"&quot;", r"\"", string)
-        string = re.sub(r"&#37;", r"%", string)
-        string = re.sub(r"&#39; ", r"'", string)        
-        string = re.sub(r"&#92;", r"\\", string)
-        string = re.sub(r"&#47;", r"/", string)
-        string = re.sub(r"&#43;", r"\+", string)
-        string = re.sub(r"&#61;", r"=", string)
-        string = re.sub(r"&lt;", r"<", string)
-        string = re.sub(r"&rt;", r">", string)        
-        string = re.sub(r"&#35;", r"#", string)
-        string = re.sub(r"&amp;", r"&", string)
+        string = unicode(string).encode('utf-8')
+        string = re.sub(ur"&quot;", ur"\"", string)
+        string = re.sub(ur"&#37;", ur"%", string)
+        string = re.sub(ur"&#39; ", ur"'", string)
+        string = re.sub(ur"&#92;", ur"\\", string)
+        string = re.sub(ur"&#47;", ur"/", string)
+        string = re.sub(ur"&#43;", ur"\+", string)
+        string = re.sub(ur"&#61;", ur"=", string)
+        string = re.sub(ur"&lt;", ur"<", string)
+        string = re.sub(ur"&rt;", ur">", string)        
+        string = re.sub(ur"&#35;", ur"#", string)
+        string = re.sub(ur"&amp;", ur"&", string)
         return string

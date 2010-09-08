@@ -123,7 +123,7 @@ class Bot:
             command = text
             stext = '' 
         if not msg.timestamp and user != self.conference+'/'+self.nick:
-            if 'php' in text:
+            if 'php' in text and text != 'php-какашка':
                 self.sayChat(u'php-какашка') #coding-utf8 badbad
                 return
             if '!modules' in text:

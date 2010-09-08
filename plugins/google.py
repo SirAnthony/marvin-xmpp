@@ -22,9 +22,17 @@ translate <string> [lang <language>|<language>]:
         if lang.find('jp') >= 0:
             sendfunc('Use ja, Luke.', 'groupchat')
             return
-                    
-        response = json.loads(self.goUrl('http://ajax.googleapis.com/ajax/services/language/translate?v=1.0&',
-                                   {'q' : text,'langpair':lang}))
+        
+        langs = lang.split('|')
+        response = ''
+        for i in range(0, len(langs)-1):
+            response = json.loads(self.goUrl('http://ajax.googleapis.com/ajax/services/language/translate?v=1.0&',
+                                   {'q' : text,'langpair':langs[i]+'|'+langs[i+1]}))
+            if response and response.has_key('responseData') and response['responseData'] and response['responseData'].has_key('translatedText'):
+                text = unicode(response['responseData']['translatedText']).encode('utf-8')
+            else:
+                sendfunc('Translate from ' + langs[i] + ' to ' + langs[i+1] + ' fail. Last: ' + text, 'groupchat')
+                return
         if response and response.has_key('responseData') and response['responseData'] and response['responseData'].has_key('translatedText'):
             sendfunc(response['responseData']['translatedText'], 'groupchat')
         else:
