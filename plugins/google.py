@@ -2,9 +2,18 @@ import urllib
 import json
 
 class Google:
+    ''' Google module
+google <string> [results <number>]
+translate <string> [lang <language>|<language>]'''
+    
     public = ['translate', 'google']
     
     def translate(self, sendfunc, msg):
+        '''
+translate <string> [lang <language>|<language>]:
+    translate <string> using google api.
+    lang option specifies the direction of translation. <language> it is 2-character code of language.
+    Default direction: en|ru'''
         try: (text, lang) = msg.rsplit(' lang ', 1)
         except ValueError:
             text = msg
@@ -22,6 +31,10 @@ class Google:
             sendfunc('NO WAI!', 'groupchat')
     
     def google(self, sendfunc, msg):
+        '''
+google <string> [results <number>]:
+    google <string> in google.
+    results - number of printed search results.'''
         try: (text, numresults) = msg.rsplit(' results ', 1)
         except ValueError:
             text = msg

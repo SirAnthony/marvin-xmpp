@@ -94,8 +94,24 @@ class Bot:
     def execute(self, command, text):
         module = self.functions[command]
         if module in self.objects.keys():
-            func = getattr(self.objects[module], command)
-            func(self.sayChat, text)
+            if text == '!help':
+                if self.objects[module].__doc__:
+                    self.sayChat(self.objects[module].__doc__)
+                else:
+                    self.sayChat('No documentation on ' + module + ' avaliable.')
+            elif text.find('!help ') == 0:
+                funcname = text.replace('!help ', '')
+                try: func = getattr(self.objects[module], funcname)
+                except Exception:
+                    self.sayChat('NO WAI!')
+                    return
+                if func.__doc__:
+                    self.sayChat(func.__doc__)
+                else:
+                    self.sayChat('No documentation on ' + funcname + ' in ' + module + ' avaliable.')
+            else:
+                func = getattr(self.objects[module], command)
+                func(self.sayChat, text)
         
 
     def message(self, conn, msg):
