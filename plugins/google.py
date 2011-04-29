@@ -1,6 +1,8 @@
 import urllib
 import json
 
+MainObject = 'Google'
+
 class Google:
     ''' Google module
 google <string> [results <number>]
@@ -36,7 +38,7 @@ translate <string> [lang <language>|<language>]:
         if response and response.has_key('responseData') and response['responseData'] and response['responseData'].has_key('translatedText'):
             sendfunc(response['responseData']['translatedText'], 'groupchat')
         else:
-            sendfunc('NO WAI!', 'groupchat')
+            sendfunc('NO WAI!')
     
     def google(self, sendfunc, msg):
         '''
@@ -60,10 +62,10 @@ google <string> [results <number>]:
                 if numresults > 0 and num >= numresults:
                     break
                 result['content'] = result['content'].replace('<b>', '').replace('</b>', '')                
-                sendfunc(' '.join([result['titleNoFormatting'], result['content'], result['url']]), 'groupchat')
+                sendfunc(' '.join([result['titleNoFormatting'], result['content'], result['url']]))
                 num += 1
         else:
-            sendfunc('NO WAI!', 'groupchat')
+            sendfunc('NO WAI!')
 
     
     def goUrl(self, url=None, params = {}):

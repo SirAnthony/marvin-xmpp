@@ -7,6 +7,7 @@ import signal
 import time
 from datetime import datetime
 import ConfigParser
+from modulemanager import Manager
 
 class Bot:
     
@@ -19,12 +20,12 @@ class Bot:
         self.password = config.get('connect', 'password')
         self.nick = config.get('connect', 'nick')
         self.conference = config.get('connect', 'conference')
-        
+        self.presence = xmpp.Presence(to = self.conference + '/' + self.nick)
         self.bot = None
-        self.modules = {}
-        self.objects = {}
-        self.functions = {}
+        self.manager = Manager()
         
+        print "Loading plugins"
+        self.loadPlugins()
         self.connect()
         print "Bot started"
         self.process()
@@ -33,90 +34,66 @@ class Bot:
     def connect(self):
         jid = xmpp.JID(self.login)
         self.client = xmpp.Client(jid.getDomain(),debug=[])
-        print "Loading plugins"
-        self.loadPlugins()
         print "Connecting"
         self.client.connect()
         self.client.auth(jid.getNode(), self.password)
         self.client.sendInitPresence()
         self.client.RegisterHandler('message', self.message)
-        self.client.send(xmpp.Presence(to = self.conference + '/' + self.nick))
+        self.client.send(self.presence)
+        print self.presence.getStatusCode()
     
     def loadPlugins(self):
-        self.functions.clear()
-        self.objects.clear()
         for fname in os.listdir('plugins/'):
             if fname.endswith('.py'):
-                funcs = []
-                plugin_name = fname[:-3]
+                plugin_name = fname.rsplit('.', 1)[0]
                 if plugin_name != '__init__':
                     print "Loading " + plugin_name
-                    if plugin_name in self.modules:
-                        try: plugin = reload(self.modules[plugin_name])
-                        except Exception, e:
-                            del self.modules[plugin_name]
-                            print "Could not load" + plugin_name + ": " + str(e)
-                            continue
-                    else:
-                        try: plugin = __import__('plugins.'+plugin_name)
-                        except Exception, e:
-                            print "Could not load" + plugin_name + ": " + str(e)
-                            continue
-                    self.modules[plugin_name] = plugin
-                    obj = getattr(plugin, plugin_name)
-                    try: obj = getattr(obj, plugin_name)
-                    except Exception, AttributeError:
-                        try: obj = getattr(obj, plugin_name.capitalize())
-                        except Exception, e:
-                            print "Could not load" + plugin_name + ": " + str(e)
-                            continue
-                    try: obj = obj()
+                    try:
+                        self.manager.load('plugins.%s' % plugin_name)
                     except Exception, e:
-                        print "Could not load" + plugin_name + ": " + str(e)
-                        continue 
-                    try: funs = getattr(obj, 'public')
-                    except Exception, e:
-                        print "Could not load" + plugin_name + ": " + str(e)
-                        continue
-                    self.objects[plugin_name] = obj
-                    for func in funs:
-                        self.functions[func] = plugin_name
+                        "Could not load %s: %s" % (plugin_name, e)
+        self.manager.update_functions()
     
     def process(self):
         def StepOn():
-            try: self.client.Process(1)
-            except KeyboardInterrupt: return 1
+            if not self.client.isConnected():
+                self.connect()
+            try:
+                self.client.Process(1)
+            except KeyboardInterrupt:
+                return 1
         while not StepOn(): pass
         
     def sayChat(self, text, *arg):
         self.client.send(xmpp.Message(self.conference, text, 'groupchat'))
         
     def execute(self, command, text):
-        module = self.functions[command]
-        if module in self.objects.keys():
-            if text == '!help':
-                if self.objects[module].__doc__:
-                    self.sayChat(self.objects[module].__doc__)
-                else:
-                    self.sayChat('No documentation on ' + module + ' avaliable.')
-            elif text.find('!help ') == 0:
-                funcname = text.replace('!help ', '')
-                try: func = getattr(self.objects[module], funcname)
-                except Exception:
-                    self.sayChat('NO WAI!')
-                    return
-                if func.__doc__:
-                    self.sayChat(func.__doc__)
-                else:
-                    self.sayChat('No documentation on ' + funcname + ' in ' + module + ' avaliable.')
+        module = self.manager.modules[self.manager.functions[command]]
+        if command not in module.functions.keys():
+            self.sayChat('NO WAI!')
+            print 'Error. %s not exists in %s.' % (command, module.name) 
+            return
+        function = module.functions[command]
+        if text == 'help':
+            if function.__doc__:
+                self.sayChat(function.__doc__)
             else:
-                func = getattr(self.objects[module], command)
-                func(self.sayChat, text)
-        
+                self.sayChat('No documentation on %s avaliable.' % command)
+        elif text == 'help module':
+            if module.object.__doc__:
+                self.sayChat(module.object.__doc__)
+            else:
+                self.sayChat('No documentation on %s avaliable.' % module.name)
+        else:
+            try:
+                function(self.sayChat, text)
+            except Exception, e:
+                print str(e)
+                self.sayChat('Fail')
 
     def message(self, conn, msg):
-        text = unicode(msg.getBody()).encode('utf8')
-        user = unicode(msg.getFrom()).encode('utf8')
+        text = msg.getBody()
+        user = msg.getFrom()
         if not text: return
         try: command, stext = text.split(' ', 1)
         except ValueError:
@@ -127,14 +104,13 @@ class Bot:
                 self.sayChat(u'php-какашка') #coding-utf8 badbad
                 return
             if '!modules' in text:
-                print self.modules.keys()
-                self.sayChat(self.modules.keys())
+                self.sayChat(self.manager.modules.keys())
                 return
             if '!functions' in text:
-                self.sayChat(self.functions.keys())
+                self.sayChat(self.manager.functions.keys())
                 return
-            if command in self.functions.keys():
-                self.execute(command, stext)
+            if command in self.manager.functions.keys():
+                self.execute(command, stext.strip())
                 return
             if '!reload' in text:
                 self.sayChat('Reloading modules...')

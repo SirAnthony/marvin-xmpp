@@ -1,4 +1,6 @@
-import random 
+import random
+
+MainObject = 'Fortune' 
 
 class Fortune:
     public = ['fortune', 'testm']
@@ -40,3 +42,4 @@ class Fortune:
         
     def testm(senlf, sendfunc, msg):
         sendfunc('It is test module.', 'groupchat')
+

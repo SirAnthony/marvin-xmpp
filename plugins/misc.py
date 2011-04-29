@@ -18,6 +18,8 @@ turn <string>'''
             trlist = [u'ЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬБЮ,йцукенгшщзхъфывапролджэячсмитьбю.',
                       u'QWERTYUIOP{}ASDFGHJKL;"ZXCVBNM<>?qwertyuiop[]asdfghjkl;\'zxcvbnm,./'] #'        
         
-        print trlist
-        trstring = ''.join(map(lambda x: trlist[1][trlist[0].find(x)], msg))
-        sendfunc(trstring)
+        d = msg
+        for char in d:
+            idx = trlist[1].index(char)
+            msg = msg.replace(trlist[1][idx], trlist[0][idx])
+        sendfunc(msg)

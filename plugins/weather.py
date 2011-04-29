@@ -2,6 +2,8 @@ import urllib
 from xml.dom import minidom
 from pprint import pprint
 
+MainObject = 'Weather'
+
 class Weather:
     public = ['weather']
     

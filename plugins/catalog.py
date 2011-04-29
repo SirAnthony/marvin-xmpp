@@ -2,6 +2,8 @@ import urllib
 import json
 import re
 
+MainObject = 'Catalog'
+
 class Catalog:
     '''Catalog module 
 This module uses anicat.net api, ororo.
