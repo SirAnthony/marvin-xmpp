@@ -1,27 +1,69 @@
 
-import sys, imp
+import sys
+import os
+import imp
+from traceback import format_exception
 
 class Module:
-    
+
     def __init__(self, name, module, obj, functions):
         self.name = name
         self.module = module
         self.object = obj
         self.functions = functions
-    
+        self.aliases = obj.aliases if hasattr(obj, 'aliases') else None
+             
+
     def __str__(self):
         ' :3 '
         return "{'name': %s, 'module': %s, 'object': %s, 'functions': %s}" % \
                     (self.name, self.module, self.object, self.functions) 
 
+class Dependences(object):
+    "If you use modules with same names, you need to use full names through getitem."
+    def __setitem__(self, item, value):
+        setattr(self, item, value)
+        if item.find('.') >= 0:
+            setattr(self, item.rsplit('.', 1)[-1], value)
+    def __getattr__(self, item):
+        try:
+            return self.__getitem__(item)
+        except KeyError:
+            return None
+
 class Manager:
-    
+
     def __init__(self):
         self.modules = {}
         self.functions = {}
+        self.aliases = {}
+        self.__loading = []
+        self.directory = 'plugins'
+        self.load_dir()
+
+    def load_dir(self, directory=None):
+        directory = directory or self.directory
+        print "Loading dir " + directory
+        for fname in os.listdir(directory):
+            if fname.endswith('.py'):
+                plugin_name = fname.rsplit('.', 1)[0]
+                if plugin_name != '__init__':
+                    modulename = '.'.join((directory, plugin_name))
+                    try:
+                        self.load(modulename)
+                    except:
+                        print "Could not load %s:" % plugin_name
+                        print ''.join(format_exception(*sys.exc_info()))
+                    finally:
+                        self.__loading.remove(modulename)
+        self.update_functions()
 
     def load(self, modulename):
+        if modulename in self.__loading:
+            return
+        print "Loading " + modulename
         module = None
+        self.__loading.append(modulename)
         try:
             module = self._reload_hook(self.modules[modulename].module)
         except KeyError:
@@ -30,18 +72,40 @@ class Manager:
             if self.modules.has_key(modulename):
                 del self.modules[modulename]
         if module:
-            obj = self.get_object(module)
+            obj = self.__get_objects(module)
             if obj:
                 obj = obj()
-                functions = self.get_functions(obj)
+                #FIXME: Dependencies loads after module imported
+                #TODO: Dependencies needs full path
+                functions = self.__get_functions(obj)
                 self.modules[modulename] = Module(modulename, module, obj, functions)
+                if hasattr(obj, 'depends'):                    
+                    depends = Dependences()
+                    for depend in obj.depends:
+                        self.load(depend)
+                        mdep = self.modules.get(depend)
+                        if mdep:
+                            mdep = mdep.obj
+                        setattr(depends, depend, mdep)
+                    setattr(obj, 'depends', depends)
+        
 
-    def get_object(self, module):
-        objname = getattr(module, 'MainObject')
-        obj = getattr(module, objname)
-        return obj
+    def get(self, name):
+        if name in self.modules:
+            return self.modules[name]
 
-    def get_functions(self, obj):
+    def __get_objects(self, module):
+        #FIXME: Too lazy
+        #TODO: many modules in one file
+        objs = None
+        for membername in dir(module):
+            member = getattr(module, membername)
+            if type(member).__name__ == 'classobj' and hasattr(member, '_marvinModule'):
+                setattr(member, 'manager', self)
+                objs = member
+        return objs
+
+    def __get_functions(self, obj):
         ''' Checks for public functions presence
             and returns list of avaliable.
         '''
@@ -52,20 +116,27 @@ class Manager:
                 func = getattr(obj, function)
             except Exception, e:
                 print 'Bad function %s: %s' % (function, e)
-                continue            
+                continue
             real[function] = func
         return real
 
     def update_functions(self):
         self.functions = {}
+        self.aliases = {}
         for m in self.modules.values():
             for func in m.functions.keys():
                 if func in self.functions.keys():
                     print 'Function %s already loaded in module %s. Skipped in %s.' % \
                             (func, self.functions[func], m.name)
                     continue
+                if func in m.aliases.keys():
+                    for alias in m.aliases[func]:
+                        if alias in self.aliases:
+                            print 'Alias %s already loaded for function %s in module %s. Skipped for %s.' % \
+                            (alias, self.aliases[alias], m.name, func)
+                            continue
+                        self.aliases[alias] = func
                 self.functions[func] = m.name
-
 
     def _import_hook(self, name, globals=None, locals=None, fromlist=None):
         parent = self.__determine_parent(globals)
@@ -76,7 +147,7 @@ class Manager:
         if hasattr(m, "__path__"):
             self.__ensure_fromlist(m, fromlist)
         return m
-    
+
     def __determine_parent(self, globals):
         if not globals or not globals.has_key("__name__"):
             return None
@@ -92,7 +163,7 @@ class Manager:
             assert parent.__name__ == pname
             return parent
         return None
-    
+
     def __find_head_package(self, parent, name):
         if '.' in name:
             i = name.find('.')
@@ -113,7 +184,7 @@ class Manager:
             q = self.__import_module(head, qname, parent)
             if q: return q, tail
         raise ImportError, "No module named " + qname
-    
+
     def __load_tail(self, q, tail):
         m = q
         while tail:
