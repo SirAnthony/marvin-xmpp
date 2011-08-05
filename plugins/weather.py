@@ -2,13 +2,13 @@ import urllib
 from xml.dom import minidom
 from pprint import pprint
 
-MainObject = 'Weather'
-
 class Weather:
+
+    _marvinModule = True
     public = ['weather']
-    
+
     def weather(self, sendfunc, msg):
-    	location = msg.split(' ')
+        location = msg.split(' ')
         source = "http://www.google.com/ig/api?weather=%s" % location[0]
         target = urllib.urlopen(source)
         xmlraw = minidom.parse(target)
@@ -20,6 +20,3 @@ class Weather:
         except:
             message = '%s not found on this planet. Please try another one.' % location[0]
         sendfunc(message, 'groupchat')
-    
-        
-        

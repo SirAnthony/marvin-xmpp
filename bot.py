@@ -255,7 +255,7 @@ class Bot:
                 pass
         if not modulename:
             return
-        message.ctext = text 
+        message.ctext = text
         module = self.manager.modules[modulename]
         if command not in module.functions.keys():
             message.reply('NO WAI!')

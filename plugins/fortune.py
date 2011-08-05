@@ -3,9 +3,11 @@ import random
 MainObject = 'Fortune' 
 
 class Fortune:
+    
+    _marvinModule = True
     public = ['fortune', 'testm']
 
-    def fortune(self, sendfunc, msg):
+    def fortune(self, message):
         fortunes = ['The gene pool could use a little chlorine.',
                 'Make it idiot proof and someone will make a better idiot.', 
                 'He who laughs last thinks slowest.',
@@ -38,8 +40,8 @@ class Fortune:
 
         quote = fortunes[random.randint(1,len(fortunes))]
         
-        sendfunc(quote, 'groupchat')
+        message.reply(quote)
         
-    def testm(senlf, sendfunc, msg):
-        sendfunc('It is test module.', 'groupchat')
+    def testm(senlf, message):
+        message.reply('It is test module.')
 

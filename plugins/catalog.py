@@ -9,6 +9,8 @@ class Catalog:
 This module uses anicat.net api, ororo.
 anime <string> [results <number>]
 aniget <number> <string>'''
+
+    _marvinModule = True
     public = ['anime', 'aniget']
     
     def anime(self, sendfunc, msg):

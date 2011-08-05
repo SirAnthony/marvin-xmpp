@@ -56,7 +56,7 @@ class Manager:
                         print ''.join(format_exception(*sys.exc_info()))
                     finally:
                         self.__loading.remove(modulename)
-        self.update_functions()
+        #self.update_functions()
 
     def load(self, modulename):
         if modulename in self.__loading:
@@ -70,25 +70,25 @@ class Manager:
             module = self._import_hook(modulename, fromlist='*')
         finally:
             if self.modules.has_key(modulename):
-                del self.modules[modulename]
+                del self.modules[modulename]        
         if module:
             obj = self.__get_objects(module)
+            print obj
             if obj:
                 obj = obj()
                 #FIXME: Dependencies loads after module imported
                 #TODO: Dependencies needs full path
                 functions = self.__get_functions(obj)
                 self.modules[modulename] = Module(modulename, module, obj, functions)
-                if hasattr(obj, 'depends'):                    
-                    depends = Dependences()
-                    for depend in obj.depends:
-                        self.load(depend)
-                        mdep = self.modules.get(depend)
-                        if mdep:
-                            mdep = mdep.obj
-                        setattr(depends, depend, mdep)
-                    setattr(obj, 'depends', depends)
-        
+                #if hasattr(obj, 'depends'):                    
+                #    depends = Dependences()
+                #    for depend in obj.depends:
+                #        self.load(depend)
+                #        mdep = self.modules.get(depend)
+                #        if mdep:
+                #            mdep = mdep.obj
+                #        setattr(depends, depend, mdep)
+                #    setattr(obj, 'depends', depends)
 
     def get(self, name):
         if name in self.modules:
@@ -98,6 +98,7 @@ class Manager:
         #FIXME: Too lazy
         #TODO: many modules in one file
         objs = None
+        print dir(module)
         for membername in dir(module):
             member = getattr(module, membername)
             if type(member).__name__ == 'classobj' and hasattr(member, '_marvinModule'):
@@ -129,7 +130,7 @@ class Manager:
                     print 'Function %s already loaded in module %s. Skipped in %s.' % \
                             (func, self.functions[func], m.name)
                     continue
-                if func in m.aliases.keys():
+                if m.aliases and func in m.aliases.keys():
                     for alias in m.aliases[func]:
                         if alias in self.aliases:
                             print 'Alias %s already loaded for function %s in module %s. Skipped for %s.' % \
