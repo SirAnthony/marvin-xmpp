@@ -56,7 +56,7 @@ class Manager:
                         print ''.join(format_exception(*sys.exc_info()))
                     finally:
                         self.__loading.remove(modulename)
-        #self.update_functions()
+        self.update_functions()
 
     def load(self, modulename):
         if modulename in self.__loading:
@@ -67,42 +67,41 @@ class Manager:
         try:
             module = self._reload_hook(self.modules[modulename].module)
         except KeyError:
+            print "Importing"
             module = self._import_hook(modulename, fromlist='*')
         finally:
             if self.modules.has_key(modulename):
                 del self.modules[modulename]        
         if module:
             obj = self.__get_objects(module)
-            print obj
             if obj:
                 obj = obj()
                 #FIXME: Dependencies loads after module imported
                 #TODO: Dependencies needs full path
                 functions = self.__get_functions(obj)
                 self.modules[modulename] = Module(modulename, module, obj, functions)
-                #if hasattr(obj, 'depends'):                    
-                #    depends = Dependences()
-                #    for depend in obj.depends:
-                #        self.load(depend)
-                #        mdep = self.modules.get(depend)
-                #        if mdep:
-                #            mdep = mdep.obj
-                #        setattr(depends, depend, mdep)
-                #    setattr(obj, 'depends', depends)
+                if hasattr(obj, 'depends'):                    
+                    depends = Dependences()
+                    for depend in obj.depends:
+                        self.load(depend)
+                        mdep = self.modules.get(depend)
+                        if mdep:
+                            mdep = mdep.obj
+                        setattr(depends, depend, mdep)
+                    setattr(obj, 'depends', depends)
 
     def get(self, name):
         if name in self.modules:
             return self.modules[name]
 
     def __get_objects(self, module):
-        #FIXME: Too lazy
+        #FIXME: Author too lazy
         #TODO: many modules in one file
         objs = None
-        print dir(module)
         for membername in dir(module):
             member = getattr(module, membername)
             if type(member).__name__ == 'classobj' and hasattr(member, '_marvinModule'):
-                setattr(member, 'manager', self)
+                #setattr(member, 'manager', self)
                 objs = member
         return objs
 
@@ -217,7 +216,7 @@ class Manager:
 
     def __import_module(self, partname, fqname, parent):
         try:
-            return sys.modules[fqname]
+            return self._reload_hook(sys.modules[fqname])
         except KeyError:
             pass
         try:
@@ -234,4 +233,4 @@ class Manager:
 
     # Replacement for reload()
     def _reload_hook(self, module):
-        return reload(module)
+        return imp.reload(module)
