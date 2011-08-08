@@ -1,5 +1,6 @@
-import urllib
+
 import json
+from functions import goUrl
 
 class Google:
     ''' Google module
@@ -28,7 +29,7 @@ translate <string> [lang <language>|<language>]:
         langs = lang.split('|')
         response = ''
         for i in range(0, len(langs)-1):
-            response = json.loads(self.goUrl('http://ajax.googleapis.com/ajax/services/language/translate?v=1.0&',
+            response = json.loads(goUrl('http://ajax.googleapis.com/ajax/services/language/translate?v=1.0&',
                                    {'q' : text,'langpair':langs[i]+'|'+langs[i+1]}))
             if response and response.has_key('responseData') and response['responseData'] and response['responseData'].has_key('translatedText'):
                 text = response['responseData']['translatedText']
@@ -53,8 +54,7 @@ google <string> [results <number>]:
         try: numresults = int(numresults)
         except Exception: numresults = 1        
         
-        response = json.loads(self.goUrl('http://ajax.googleapis.com/ajax/services/search/web?v=1.0&', 
-                                   {'q' : text}))
+        response = json.loads(goUrl('http://ajax.googleapis.com/ajax/services/search/web?v=1.0&', {'q' : text}))
         
         if response and response.has_key('responseData') and response['responseData'] and response['responseData'].has_key('results'):
             num = 0
@@ -66,14 +66,3 @@ google <string> [results <number>]:
                 num += 1
         else:
             message.reply('NO WAI!')
-
-    
-    def goUrl(self, url=None, params = {}):
-        if not url: return
-        query = ''
-        if len(params):
-            query = urllib.urlencode(dict([k.encode('utf-8'),unicode(v).encode('utf-8')] for k,v in params.items()))
-        results = urllib.urlopen(url + query)
-        return results.read()
-        
-        

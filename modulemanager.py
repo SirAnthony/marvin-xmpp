@@ -67,7 +67,6 @@ class Manager:
         try:
             module = self._reload_hook(self.modules[modulename].module)
         except KeyError:
-            print "Importing"
             module = self._import_hook(modulename, fromlist='*')
         finally:
             if self.modules.has_key(modulename):

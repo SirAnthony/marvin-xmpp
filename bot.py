@@ -11,7 +11,6 @@ from modulemanager import Manager
 from random import randint
 from traceback import format_exception
 
-
 class ReloadData(Exception):
     pass
 
@@ -32,7 +31,6 @@ def sigHupProcess(signum, frame):
 class Message:
 
     def __init__(self, msg, func=None):
-        self.sayfunc = None
         self.type = msg.getType()
         self.form = msg.getFrom()
         self.user = self.form.getStripped()
@@ -211,16 +209,19 @@ class Bot:
 
         if 'php' in message.text:
             message.reply(u'php-какашка') #coding-utf8 badbad
-
         if '!modules' in message.text:
             message.reply(self.manager.modules.keys())
             return
         if '!functions' in message.text:
             message.reply(self.manager.functions.keys())
             return
+        if '!aliases' in message.text:
+            message.reply(self.manager.aliases)
+            return
         if '!reload' in message.text:
             message.reply('Reloading modules...')
             self.manager.load_dir()
+            return
         if '!eval' in message.text and message.resource == self.admin:
             #too dangerous
             #estr = str(text.split(' ', 1)[1])

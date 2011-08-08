@@ -1,6 +1,8 @@
-import urllib
+
 import json
 import re
+import urllib
+from functions import goUrl
 
 class Catalog:
     '''Catalog module 
@@ -10,6 +12,7 @@ aniget <number> <string>'''
 
     _marvinModule = True
     public = ['anime', 'aniget']
+    aliases = {'anime': ('a',), 'aniget': ('aid',)}
     
     def __init__(self):
         self.csrf = self.getcsrf()
@@ -22,18 +25,19 @@ anime <string> [results <number>] [page <number>]:
     page - number of results page to display
     sort - not realised yet
     field - not supported by api yet.'''
-        self.getcsrf()
-        try: (text, page) = message.ctext.rsplit(' page ', 1)
+        if not self.csrf:
+            self.csrf = self.getcsrf()
+        try: (text, page) = message.ctext.rsplit(' page ', 0)
         except ValueError:
             text = message.ctext
-            page = 1
+            page = 0
         try:
             (text, numresults) = text.rsplit(' results ', 1)
             numresults = int(numresults)
         except ValueError:
             numresults = 3
-        ret = self.goUrl('http://anicat.net/ajax/search/', {'string': text, 'page': page})
-        print ret
+        ret = goUrl('http://anicat.net/ajax/search/', {'string': text, 'page': page, 'limit': numresults,
+                    'csrfmiddlewaretoken': self.csrf}, True, {'csrftoken': self.csrf})
         ret = json.loads(ret)
         if not ret:
             message.reply('No!')
@@ -45,18 +49,17 @@ anime <string> [results <number>] [page <number>]:
             if not ret['text']['count']:
                 message.reply('NO WAI!')
             else:
-                response = str(ret['text']['count']) +' results total.\n'
-                response = 'Page %i of %i \n' % (ret['text']['page'], 
+                response = str(ret['text']['count']) +' results total. '
+                response += 'Page %i of %i \n' % (ret['text']['page'] + 1, 
                             int(ret['text']['count'])/numresults)
                 rescount = 0
                 for elem in ret['text']['items']:
                     rescount += 1
-                    if rescount >= results:
+                    if rescount > numresults:
                         break
-                    response += 'Catalog id: ' + str(elem['id'])
-                    response += ' http://anicat.net/card/'+ str(elem['id']) + '\n'
                     response += '%s (%s), Translation: %s\n' % (self.encd(elem['name']),
-                                elem['type'], elem['translation'])                    
+                                elem['type'], elem['translation'])
+                    response += 'Catalog id: %d http://anicat.net/card/%d/\n' % (elem['id'], elem['id'])
                 message.reply(response)
 
     def aniget(self, message):
@@ -64,13 +67,16 @@ anime <string> [results <number>] [page <number>]:
 aniget <number> <string>:
     Return <string> parameter of record with id <number>.
     Multiple fields supported with comma separator between.'''
+        if not self.csrf:
+            self.csrf = self.getcsrf()
         try: 
             cid, text = message.ctext.split(' ', 1)
             int(cid)
         except Exception:
             message.reply('NO WAI!\nTry !help aniget')
             return
-        ret = json.loads(self.goUrl('http://anicat.net/ajax/get/', {'get': cid, 'string': text}))
+        ret = json.loads(goUrl('http://anicat.net/ajax/get/', {'id': cid, 'field': text,
+                               'csrfmiddlewaretoken': self.csrf}, True, {'csrftoken': self.csrf}))
         if not ret:
             message.reply('No!')
             return
@@ -79,6 +85,7 @@ aniget <number> <string>:
         else:
             resp = ''
             r = ret['text']
+            print r
             for o in r['order']:
                 elem = r[o]
                 if len(elem) > 0:
@@ -96,25 +103,12 @@ aniget <number> <string>:
                         resp += self.encd(elem)
                 message.reply(resp)
 
-    def goUrl(self, url=None, params = {}):
-        if not url: return
-        query = ''
-        if not self.csrf:
-            self.csrf = self.getcsrf()
-        params['csrftoken'] = self.csrf
-        if len(params):
-            query = urllib.urlencode(params)
-        print params
-        results = urllib.urlopen(url, query)
-        return results.read()
-    
     def getcsrf(self):
         u = urllib.URLopener().open("http://anicat.net/settings/")
         return u.info()['set-cookie'].split('csrftoken=')[-1].split(';', 1)[0]
     
     def encd(self, string):
         "Convert codes into characters"
-        string = unicode(string).encode('utf-8')
         string = re.sub(ur"&quot;", ur"\"", string)
         string = re.sub(ur"&#37;", ur"%", string)
         string = re.sub(ur"&#39; ", ur"'", string)
