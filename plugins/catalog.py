@@ -47,11 +47,11 @@ anime <string> [results <number>] [page <number>]:
         else:
             
             if not ret['text']['count']:
-                message.reply('NO WAI!')
+                message.reply('Nothing found.')
             else:
                 response = str(ret['text']['count']) +' results total. '
                 response += 'Page %i of %i \n' % (ret['text']['page'] + 1, 
-                            int(ret['text']['count'])/numresults)
+                            int(ret['text']['count'])/numresults + 1)
                 rescount = 0
                 for elem in ret['text']['items']:
                     rescount += 1
@@ -73,7 +73,7 @@ aniget <number> <string>:
             cid, text = message.ctext.split(' ', 1)
             int(cid)
         except Exception:
-            message.reply('NO WAI!\nTry !help aniget')
+            message.reply('NO WAI!\nTry "aniget help"')
             return
         ret = json.loads(goUrl('http://anicat.net/ajax/get/', {'id': cid, 'field': text,
                                'csrfmiddlewaretoken': self.csrf}, True, {'csrftoken': self.csrf}))

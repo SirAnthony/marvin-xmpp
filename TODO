@@ -1,6 +1,9 @@
-One function for arguments parsing.
-Logging module.
-Accounts module.
-Markov chains.
 Reload one module instead all.
-
+Loading modules by path and name
+Return result from modules instead print.
+One function for arguments parsing.
+Accounts module.
+├─Join and leave commands
+└─Reload to administration
+Logging module.
+└─Markov chains.

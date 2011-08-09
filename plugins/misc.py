@@ -21,7 +21,7 @@ Turn string from one to another keyboard variant. Only qwerty <-> йцукен s
             trlist = [u'ЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬБЮ,йцукенгшщзхъфывапролджэячсмитьбю.',
                       u'QWERTYUIOP{}ASDFGHJKL;"ZXCVBNM<>?qwertyuiop[]asdfghjkl;\'zxcvbnm,./'] #'        
 
-        msg = None
+        msg = message.ctext
         for char in message.ctext:
             idx = trlist[1].index(char)
             msg = msg.replace(trlist[1][idx], trlist[0][idx])
