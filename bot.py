@@ -69,6 +69,21 @@ Message variables:
         return string
 
 class Bot:
+    '''
+Core commands:
+!modules
+    Lists all loaded modules.
+!functions
+    Lists all available commands.
+!aliases
+    Lists all aliases for commands.
+!load [modulename]
+!reload [modulename]
+    Reloads module modulename or reloads pluggins directory.
+!help [module name]
+    With module name given prints module info.
+    Without arguments prints this help.
+'''
 
     version = '0.7.0'
 
@@ -182,6 +197,9 @@ class Bot:
             nick = lroom.get('anothernick') or lroom.get('nick') or self.nick
             self.client.send(xmpp.Presence(to='%s/%s' % (room, nick), typ='unavailable', status='offline'))
             del self.rooms[room]
+            l = self.manager.get('pluggins.logger')
+            if l and l.functions:
+                l.functions['leave'](room)
             return True
 
     def say(self, *args):
@@ -189,6 +207,11 @@ class Bot:
         self.__repeats.append(args[1])
         if self.__repeats.count(args[1]) > 5:
             return
+        try:
+            l = self.manager.get('plugins.logger')                    
+            getattr(l.object, 'log')(args[0], args[1], args[2], self.nick)
+        except:
+            pass
         self.client.send(xmpp.Message(*args))
 
     def messageProcess(self, conn, msg):
@@ -200,29 +223,53 @@ class Bot:
             return
 
         try:
-            room = self.rooms[mesage.user]
+            room = self.rooms[message.user]
             nick = room.get('anothernick') or room.get('nick') or self.nick
         except:
             nick = self.nick
         if not message.resource or message.resource == nick:
             return
+        
+        try:
+            l = self.manager.get('plugins.logger')
+            getattr(l.object, 'logMessage')(message)
+        except:
+            pass
 
         if 'php' in message.text:
             message.reply(u'php-какашка') #coding-utf8 badbad
-        if '!modules' in message.text:
+        if message.text.startswith('!modules'):
             message.reply(self.manager.modules.keys())
             return
-        if '!functions' in message.text:
+        elif message.text.startswith('!functions'):
             message.reply(self.manager.functions.keys())
             return
-        if '!aliases' in message.text:
+        elif message.text.startswith('!aliases'):
             message.reply(self.manager.aliases)
             return
-        if '!reload' in message.text:
-            message.reply('Reloading modules...')
-            self.manager.load_dir()
+        elif message.text.startswith('!load') or message.text.startswith('!reload'):
+            modules = message.text.split()[1:]
+            message.reply('Reloading modules %s' % ', '.join(modules))
+            if not modules:
+                self.manager.load_dir()
+            else:
+                for module in modules:
+                    self.manager.load_module(module)
+                self.manager.update_functions()
             return
-        if '!eval' in message.text and message.resource == self.admin:
+        elif message.text.startswith('!help'):
+            modulename = message.text.split(None, 1)[1:]
+            if not modulename:
+                message.reply(self.__doc__)
+            else:
+                modulename = modulename[0]
+                module = self.manager.get(modulename)
+                if not module:
+                    message.reply('No module "%s" loaded.' % modulename)
+                else:
+                    message.reply(module.object.__doc__)
+            return
+        elif message.text.startswith('!eval') and message.resource == self.admin:
             #too dangerous
             #estr = str(text.split(' ', 1)[1])
             #try: exec(estr) 
@@ -257,11 +304,12 @@ class Bot:
         if not modulename:
             return
         message.ctext = text
-        module = self.manager.modules[modulename]
+        module = self.manager.get(modulename)
+        if not module:
+            raise NameError("Module %s not exist." % modulename)
         if command not in module.functions.keys():
             message.reply('NO WAI!')
-            print 'Error. %s not exists in %s.' % (command, module.name) 
-            return
+            raise NameError('Error. %s not exists in %s.' % (command, module.name))
         function = module.functions[command]
         if text == 'help':
             if function.__doc__:
@@ -270,15 +318,11 @@ class Bot:
                 self.sayChat('No documentation on %s avaliable.' % command)
         elif text == 'help module':
             if module.object.__doc__:
-                message.reply(module.object.__doc__)
+                message.reply(('Module: %s\n' % modulename) + module.object.__doc__)
             else:
                 message.reply('No documentation on %s avaliable.' % module.name)
         else:
-            try:
-                function(message)
-            except:
-                print ''.join(format_exception(*sys.exc_info()))
-                message.reply('Fail')
+            function(message)
 
     def presenceProcess(self, conn, pres):
         ptype = pres.getType()
@@ -317,9 +361,10 @@ class Bot:
         if ptype == 'unavailable':
             #Explanation: http://xmpp.org/registrar/mucstatus.html
             status = pres.getStatusCode()
-            if status == u'303': #change nick
-                #Our name is free
-                if pres.getFrom().getResource() == mainnick:
+            if status in [u'303',  u'307']: #change nick or kicked
+                resource = pres.getFrom().getResource()
+                if  resource == mainnick:
+                    #Our name is free
                     p = xmpp.Presence('%s/%s' % (roomname, nick), 'unavailable')
                     p.setTag('x', {}, xmpp.NS_MUC_USER).setTag('affiliation',{'nick': mainnick})
                     p.setTag('x', {}, xmpp.NS_MUC_USER).setTag('status',{'code': '303'})
@@ -327,9 +372,13 @@ class Bot:
                     self.client.send(xmpp.Presence('%s/%s' % (roomname, mainnick)))
                     try:
                         self.rooms[roomname]['nick'] = mainnick
+                        del self.rooms[roomname]['anothernick'] 
                     except:
                         pass
                     self.say(roomname, 'ГАГАГА', 'groupchat')
+                elif resource == nick:
+                    self._joinPresence(roomname, self.rooms[roomname])
+                    self.say(roomname, 'Я все понял.', 'groupchat')
             if pres.getFrom().getResource() == nick and pres.getStatus() == 'Replaced by new connection':
                 if room:
                     self._joinPresence(roomname, room)
@@ -339,8 +388,7 @@ class Bot:
 
     def exit(self, msg='exit'):
         if self.client:
-            #FIXME: Not works. So what?
-            for room, data in self.rooms.iteritems():
+            for room in self.rooms.keys():                
                 self.leaveRoom(room)
             self.client = None
 

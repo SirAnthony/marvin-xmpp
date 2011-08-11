@@ -1,5 +1,4 @@
-Reload one module instead all.
-Loading modules by path and name
+0.7
 Return result from modules instead print.
 One function for arguments parsing.
 Accounts module.
@@ -7,3 +6,6 @@ Accounts module.
 └─Reload to administration
 Logging module.
 └─Markov chains.
+
+0.8
+Module depends uses local name instead full path.

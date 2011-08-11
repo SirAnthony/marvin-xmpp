@@ -1,7 +1,5 @@
 import random
 
-MainObject = 'Fortune' 
-
 class Fortune:
     
     _marvinModule = True
@@ -43,5 +41,5 @@ class Fortune:
         message.reply(quote)
         
     def testm(senlf, message):
-        message.reply('It is test module.')
+        message.reply('It is a test module.')
 

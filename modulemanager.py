@@ -49,21 +49,28 @@ class Manager:
                 plugin_name = fname.rsplit('.', 1)[0]
                 if plugin_name != '__init__':
                     modulename = '.'.join((directory, plugin_name))
-                    try:
-                        self.load(modulename)
-                    except:
-                        print "Could not load %s:" % plugin_name
-                        print ''.join(format_exception(*sys.exc_info()))
-                    finally:
-                        self.__loading.remove(modulename)
+                    self.load_module(modulename)
         self.update_functions()
+    
+    def load_module(self, modulename):
+        if not modulename:
+            return
+        try:
+            self.__load(modulename)
+        except:
+            print "Could not load %s:" % modulename
+            print ''.join(format_exception(*sys.exc_info()))
+            return
+        finally:
+            self.__loading.remove(modulename)
+        return True
 
-    def load(self, modulename):
-        if modulename in self.__loading:
+    def __load(self, modulename):
+        self.__loading.append(modulename)
+        if self.__loading.count(modulename) > 1:
             return
         print "Loading " + modulename
         module = None
-        self.__loading.append(modulename)
         try:
             module = self._reload_hook(self.modules[modulename].module)
         except KeyError:
@@ -82,7 +89,7 @@ class Manager:
                 if hasattr(obj, 'depends'):                    
                     depends = Dependences()
                     for depend in obj.depends:
-                        self.load(depend)
+                        self.load_module(depend)
                         mdep = self.modules.get(depend)
                         if mdep:
                             mdep = mdep.obj
@@ -109,7 +116,11 @@ class Manager:
             and returns list of avaliable.
         '''
         real = {}
-        public = getattr(obj, 'public')
+        public = []
+        try:
+            public = getattr(obj, 'public')
+        except AttributeError:
+            pass
         for function in public:
             try:
                 func = getattr(obj, function)

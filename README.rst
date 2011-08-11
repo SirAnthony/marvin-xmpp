@@ -13,7 +13,7 @@ Mision
 ------
 
 Marvin was designed as a modular bot where all functionality provides by 
-third-party modules. Core of bot it is just loader for those plugins, and tool
+third-party modules. Core of bot it is just a loader for those plugins, and tool
 which is make interaction between plugins and end users easier.
 
 Bot core methods
@@ -23,13 +23,17 @@ Core of the bot have some methods for plugins management.
 All core methods use ! mark at start.
 
 !modules
-  prints all loadet modules
+  prints all loaded modules
 !functions
-  prints all available functions which is procrssed as commands
+  prints all available functions which is processed as commands
 !aliases
-  prints all commands aliaces with command names near to aliases
-!reload
-  reload all modules
+  prints all commands aliases with command names near to aliases
+!reload [modulename]
+  loads (reloads) module if modulename passed. Reloads all modules from
+  default pluggins directory otherwise.
+!help [modulename]
+  prints help for module modulename. If no argument passed prints general 
+  help.
 
 Functions
 ------
@@ -51,9 +55,10 @@ Help
 ------
 
 Functions and modules help provides by modules but help mechanism realised in
-core. To get function help you need to pass 'help' as function parameter. To
-get module help you need to pass 'help module' to module function as parameter
-(will be changed in next releases).
+core. To get module help you need to send '!help modulename' as command where
+modulename it is module path name. To get function help you need to pass 'help'
+as function parameter. To determine which module has this function and also get
+module help you need to pass 'help module' to module function as parameter.
 
 
 Modules
