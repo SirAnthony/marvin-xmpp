@@ -50,7 +50,7 @@ class Message:
                 raise MessageError('''Cannot send message, no function exists.
 Message variables:
 ''' + unicode(self.__dict__))
-        else: 
+        else:
             def _say(message):
                 func(recipient, self.forceUnicode(message), mtype)
         return _say
@@ -199,7 +199,7 @@ Core commands:
             del self.rooms[room]
             l = self.manager.get('pluggins.logger')
             if l and l.functions:
-                l.functions['leave'](room)
+                l.functions['_leave'](room)
             return True
 
     def say(self, *args):
@@ -208,8 +208,8 @@ Core commands:
         if self.__repeats.count(args[1]) > 5:
             return
         try:
-            l = self.manager.get('plugins.logger')                    
-            getattr(l.object, 'log')(args[0], args[1], args[2], self.nick)
+            l = self.manager.get('plugins.logger')
+            getattr(l.object, '_log')(args[0], args[1], args[2], self.nick)
         except:
             pass
         self.client.send(xmpp.Message(*args))
@@ -229,11 +229,12 @@ Core commands:
             nick = self.nick
         if not message.resource or message.resource == nick:
             return
-        
+
         try:
             l = self.manager.get('plugins.logger')
-            getattr(l.object, 'logMessage')(message)
+            getattr(l.object, '_logMessage')(message)
         except:
+            raise
             pass
 
         if 'php' in message.text:
@@ -272,7 +273,7 @@ Core commands:
         elif message.text.startswith('!eval') and message.resource == self.admin:
             #too dangerous
             #estr = str(text.split(' ', 1)[1])
-            #try: exec(estr) 
+            #try: exec(estr)
             #except Exception, e: print estr + ' ' + str(e)
             message.reply('NO U!')
             return
@@ -345,7 +346,7 @@ Core commands:
         if ptype == 'error':
             if pres.getErrorCode() == u'409': #name conflict
                 try:
-                    l = len(room.get('nick')) 
+                    l = len(room.get('nick'))
                 except TypeError:
                     l = len(self.nick)
                 if nick[l:].isalnum():
@@ -372,7 +373,7 @@ Core commands:
                     self.client.send(xmpp.Presence('%s/%s' % (roomname, mainnick)))
                     try:
                         self.rooms[roomname]['nick'] = mainnick
-                        del self.rooms[roomname]['anothernick'] 
+                        del self.rooms[roomname]['anothernick']
                     except:
                         pass
                     self.say(roomname, 'ГАГАГА', 'groupchat')
@@ -388,7 +389,7 @@ Core commands:
 
     def exit(self, msg='exit'):
         if self.client:
-            for room in self.rooms.keys():                
+            for room in self.rooms.keys():
                 self.leaveRoom(room)
             self.client = None
 

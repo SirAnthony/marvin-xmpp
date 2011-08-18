@@ -5,7 +5,7 @@ import urllib
 from functions import goUrl
 
 class Catalog:
-    '''Catalog module 
+    '''Catalog module
 This module uses anicat.net api, ororo.
 anime <string> [results <number>]
 aniget <number> <string>'''
@@ -13,10 +13,10 @@ aniget <number> <string>'''
     _marvinModule = True
     public = ['anime', 'aniget']
     aliases = {'anime': ('a',), 'aniget': ('aid',)}
-    
+
     def __init__(self):
         self.csrf = self.getcsrf()
-    
+
     def anime(self, message):
         '''
 anime <string> [results <number>] [page <number>]:
@@ -45,12 +45,12 @@ anime <string> [results <number>] [page <number>]:
         if ret['response'] == 'error':
             message.reply(ret['text'])
         else:
-            
+
             if not ret['text']['count']:
                 message.reply('Nothing found.')
             else:
                 response = str(ret['text']['count']) +' results total. '
-                response += 'Page %i of %i \n' % (ret['text']['page'] + 1, 
+                response += 'Page %i of %i \n' % (ret['text']['page'] + 1,
                             int(ret['text']['count'])/numresults + 1)
                 rescount = 0
                 for elem in ret['text']['items']:
@@ -69,7 +69,7 @@ aniget <number> <string>:
     Multiple fields supported with comma separator between.'''
         if not self.csrf:
             self.csrf = self.getcsrf()
-        try: 
+        try:
             cid, text = message.ctext.split(' ', 1)
             int(cid)
         except Exception:
@@ -88,8 +88,8 @@ aniget <number> <string>:
             print r
             for o in r['order']:
                 elem = r[o]
-                if len(elem) > 0:
-                    resp += '\n %s:' % o.capitalize()
+                if elem:
+                    resp += '\n %s: ' % o.capitalize()
                     if type(elem).__name__ == 'list':
                         for el in elem:
                             resp += '\n'
@@ -106,9 +106,10 @@ aniget <number> <string>:
     def getcsrf(self):
         u = urllib.URLopener().open("http://anicat.net/settings/")
         return u.info()['set-cookie'].split('csrftoken=')[-1].split(';', 1)[0]
-    
+
     def encd(self, string):
         "Convert codes into characters"
+        string = unicode(string)
         string = re.sub(ur"&quot;", ur"\"", string)
         string = re.sub(ur"&#37;", ur"%", string)
         string = re.sub(ur"&#39; ", ur"'", string)
@@ -117,7 +118,7 @@ aniget <number> <string>:
         string = re.sub(ur"&#43;", ur"\+", string)
         string = re.sub(ur"&#61;", ur"=", string)
         string = re.sub(ur"&lt;", ur"<", string)
-        string = re.sub(ur"&rt;", ur">", string)        
+        string = re.sub(ur"&rt;", ur">", string)
         string = re.sub(ur"&#35;", ur"#", string)
         string = re.sub(ur"&amp;", ur"&", string)
         return string
