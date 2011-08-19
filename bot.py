@@ -234,8 +234,8 @@ Core commands:
             l = self.manager.get('plugins.logger')
             getattr(l.object, '_logMessage')(message)
         except:
-            raise
             pass
+
 
         if 'php' in message.text:
             message.reply(u'php-какашка') #coding-utf8 badbad
@@ -270,6 +270,12 @@ Core commands:
                 else:
                     message.reply(module.object.__doc__)
             return
+        elif nick in message.text:
+            try:
+                l = self.manager.get('plugins.markov')
+                getattr(l.object, 'say')(message)
+            except:
+                pass
         elif message.text.startswith('!eval') and message.resource == self.admin:
             #too dangerous
             #estr = str(text.split(' ', 1)[1])

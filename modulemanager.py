@@ -12,19 +12,25 @@ class Module:
         self.object = obj
         self.functions = functions
         self.aliases = obj.aliases if hasattr(obj, 'aliases') else None
-             
+
 
     def __str__(self):
         ' :3 '
         return "{'name': %s, 'module': %s, 'object': %s, 'functions': %s}" % \
-                    (self.name, self.module, self.object, self.functions) 
+                    (self.name, self.module, self.object, self.functions)
 
-class Dependences(object):
+class Dependences(dict):
     "If you use modules with same names, you need to use full names through getitem."
-    def __setitem__(self, item, value):
-        setattr(self, item, value)
-        if item.find('.') >= 0:
-            setattr(self, item.rsplit('.', 1)[-1], value)
+    def __setattr__(self, item, value):
+        if self.__dict__.has_key(item):
+            dict.__setattr__(self, item, value)
+            if item.find('.') >= 0:
+                setattr(self, item.rsplit('.', 1)[-1], value)
+        else:
+            self.__setitem__(item, value)
+            if item.find('.') >= 0:
+                self.__setitem__(item.rsplit('.', 1)[-1], value)
+
     def __getattr__(self, item):
         try:
             return self.__getitem__(item)
@@ -51,7 +57,7 @@ class Manager:
                     modulename = '.'.join((directory, plugin_name))
                     self.load_module(modulename)
         self.update_functions()
-    
+
     def load_module(self, modulename):
         if not modulename:
             return
@@ -77,24 +83,29 @@ class Manager:
             module = self._import_hook(modulename, fromlist='*')
         finally:
             if self.modules.has_key(modulename):
-                del self.modules[modulename]        
+                del self.modules[modulename]
         if module:
             obj = self.__get_objects(module)
             if obj:
-                obj = obj()
-                #FIXME: Dependencies loads after module imported
+                depends = None
                 #TODO: Dependencies needs full path
-                functions = self.__get_functions(obj)
-                self.modules[modulename] = Module(modulename, module, obj, functions)
-                if hasattr(obj, 'depends'):                    
+                if hasattr(obj, 'depends'):
                     depends = Dependences()
                     for depend in obj.depends:
-                        self.load_module(depend)
+                        if depend not in self.modules:
+                            self.load_module(depend)
                         mdep = self.modules.get(depend)
                         if mdep:
-                            mdep = mdep.obj
+                            mdep = mdep.object
                         setattr(depends, depend, mdep)
                     setattr(obj, 'depends', depends)
+                obj = obj()
+                for m in self.modules.values(): #update module in deps
+                    if hasattr(m.object, 'depends') and m.object.depends.has_key(modulename):
+                        setattr(m.object.depends,  modulename,  obj)
+                functions = self.__get_functions(obj)
+                self.modules[modulename] = Module(modulename, module, obj, functions)
+
 
     def get(self, name):
         if name in self.modules:

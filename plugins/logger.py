@@ -47,7 +47,7 @@ class Logger:
         for name, value in logs.iteritems():
             if not value:
                 continue
-            print self.sql.executeQuery("""CREATE TABLE IF NOT EXISTS `%s` (
+            self.sql.executeQuery("""CREATE TABLE IF NOT EXISTS `%s` (
                                             id INTEGER PRIMARY KEY autoincrement,
                                             resource TEXT NOT NULL,
                                             text TEXT NOT NULL,
@@ -63,9 +63,25 @@ class Logger:
         if name in self.logs:
             del self.logs[name]
 
-    def _getLast(self, jid, user=None):
-        return self.sql.getRecords(jid, limit=1, limstart=1,
-                                order='timestamp DESC', user=user)
+    def _getTables(self):
+        result, tables = self.sql.getRecords('sqlite_master', ['name'], type='table')
+        if result:
+            tables = [x[0] for x in tables if not x[0].startswith('sqlite_') \
+                                          and x[0].find('/') < 0 ]
+            return tables
+        else:
+            print tables
+
+    def _getLog(self, jid, count=1, user=None, select=None, **kwargs):
+        wop = None
+        if not user:
+            wop = "NOT LIKE"
+            user = "Marvin%"
+        return self.sql.getRecords(jid, select=select, limit=count,
+                resource=user, WClauseOperator=wop, **kwargs)
+
+    def _getLast(self, *args, **kwargs):
+        return self._getLog(*args, order='timestamp DESC', **kwargs)
 
     def log(self, message):
         logname = self.__stripLogName(message.form, message.type)
