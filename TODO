@@ -4,8 +4,6 @@ One function for arguments parsing.
 Accounts module.
 ├─Join and leave commands
 └─Reload to administration
-Logging module.
-└─Markov chains.
 
 0.8
 Module depends uses local name instead full path.
