@@ -1,6 +1,6 @@
-import urllib2
 import json
 import re
+from function import goUrl
 
 class Advice:
     
@@ -9,10 +9,8 @@ class Advice:
     aliases = {'advice': ['a', 'adv']}
 
     def advice(self, message):
-        foo =  urllib2.urlopen('http://fucking-great-advice.ru/api/random')
-        bar = foo.read()
-        foo.close()
-        advice = json.loads(bar)
+        url = 'http://fucking-great-advice.ru/api/random'
+        advice = json.loads(goUrl(url))
         message.reply(self.encd(advice['text']))
 
     def encd(self, string):
