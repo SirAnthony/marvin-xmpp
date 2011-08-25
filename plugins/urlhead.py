@@ -14,21 +14,20 @@ class UrlHead:
     def _urlhead(self,message):
         if 'http://' or 'https://' in message.text:
             try:
-                foundUrl = re.findall(r'(htt[p|ps]s?://\S+)', message.text)
-                for selectUrl in foundUrl:
+                foo = re.findall(r'(htt[p|ps]s?://\S+)', message.text)
+                for url in foo:
                 # dirty code for cyrillic domains
                 # TODO: punycode converter
-                    if u'.рф' in selectUrl:
-                        encodedHtml = goUrl('http://idnaconv.phlymail.de/index.php?decoded=' + selectUrl.encode('utf-8') + '&idn_version=2008&encode=Encode+>>')
+                    if u'.рф' in url:
+                        encodedHtml = goUrl('http://idnaconv.phlymail.de/index.php?decoded=' + url.encode('utf-8') + '&idn_version=2008&encode=Encode+>>')
                         temp = re.search(r'(https?://xn--\S+)', encodedHtml)
-                        selectUrl = temp.group(0).replace('"','')
+                        url = temp.group(0).replace('"','')
                 # end of dirty code
                     try: 
-                        html = lxml.html.fromstring(goUrl(selectUrl).decode('utf-8'))
+                        html = lxml.html.fromstring(goUrl(url).decode('utf-8'))
                     except:
-                        html = lxml.html.fromstring(goUrl(selectUrl))
-                    sourceTitle = html.find('.//title').text
-                    title = " ".join(sourceTitle.split())
+                        html = lxml.html.fromstring(goUrl(url))
+                    title = " ".join(html.find('.//title').text.split())
                     message.reply('Title: ' + title)
             except IOError:
                 message.reply('Link broken. Can\'t get header!')
