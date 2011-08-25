@@ -9,7 +9,7 @@ About
 
 Just another jabber bot. Why not?
 
-Mision
+Mission
 ------
 
 Marvin was designed as a modular bot where all functionality provides by 
