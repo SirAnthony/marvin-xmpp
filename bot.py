@@ -179,7 +179,7 @@ Core commands:
         if not client:
             client = self.client
         if params and params.has_key('password'):
-            presence = '<presence to=\'%s/%s\'><x xmlns=\'http://jabber.org/protocol/muc\'><password>%s</password></x></presence>' \
+            presence = '<presence to=\'%s/%s\'><x xmlns=\'..http://jabber.org/protocol/muc\'><password>%s</password></x></presence>' \
                       % (room, nick, params['password'])
         else:
             presence = xmpp.Presence(to='%s/%s' %(room, nick))
@@ -236,7 +236,12 @@ Core commands:
         except:
             pass
 
-
+        try:
+            l = self.manager.get('plugins.urlhead')
+            getattr(l.object, '_urlhead')(message)
+        except:
+            pass
+                
         if 'php' in message.text:
             message.reply(u'php-какашка') #coding-utf8 badbad
         if message.text.startswith('!modules'):
