@@ -23,10 +23,10 @@ class UrlHead:
                         temp = re.search(r'(https?://xn--\S+)', encodedHtml)
                         selectUrl = temp.group(0).replace('"','')
                 # end of dirty code
-                    if selectUrl.startswith('http://xn--'):
+                    try: 
+                        html = lxml.html.fromstring(goUrl(selectUrl).decode('utf-8'))
+                    except:
                         html = lxml.html.fromstring(goUrl(selectUrl))
-                    else:
-                        html = lxml.html.fromstring(goUrl(selectUrl).decode('utf-8'))  
                     sourceTitle = html.find('.//title').text
                     title = " ".join(sourceTitle.split())
                     message.reply('Title: ' + title)
